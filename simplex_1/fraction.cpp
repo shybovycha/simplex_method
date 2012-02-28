@@ -43,7 +43,7 @@ public:
         return *this;
     }
 
-    Fraction operator+(const Fraction& v)
+    Fraction operator+(const Fraction& v) const
     {
         return Fraction((this->a * v.b) + (this->b * v.a), this->b + v.b);
     }
@@ -56,27 +56,27 @@ public:
         return *this;
     }
 
-    Fraction operator-(const Fraction& b)
+    Fraction operator-(const Fraction& b) const
     {
         return Fraction((this->a * b.b) - (this->b * b.a), this->b + b.b);
     }
 
-    Fraction operator*(const Fraction& b)
+    Fraction operator*(const Fraction& b) const
     {
         return Fraction(this->a * b.a, this->b * b.b);
     }
 
-    Fraction operator/(const Fraction& b)
+    Fraction operator/(const Fraction& b) const
     {
         return Fraction(this->a * b.b, this->b * b.a);
     }
 
-    bool operator>(const Fraction& b)
+    bool operator>(const Fraction& b) const
     {
         return ((*this - b).a > 0);
     }
 
-    bool operator<(const Fraction& b)
+    bool operator<(const Fraction& b) const
     {
         return ((*this - b).a < 0);
     }
