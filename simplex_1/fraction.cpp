@@ -21,7 +21,7 @@ public:
 
         while (k > 1)
         {
-            k = Fraction::gcd(x, y);
+            k = gcd(x, y);
             x /= k;
             y /= k;
         }
@@ -35,7 +35,7 @@ public:
         this->b = v.b;
     }
 
-    Fraction operator=(const Fraction& v)
+    Fraction& operator=(const Fraction& v)
     {
         this->a = v.a;
         this->b = v.b;
@@ -43,27 +43,30 @@ public:
         return *this;
     }
 
-    const Fraction& operator+(const Fraction& v)
+    Fraction operator+(const Fraction& v)
     {
         return Fraction((this->a * v.b) + (this->b * v.a), this->b + v.b);
     }
 
     Fraction operator+=(const Fraction& v)
     {
-        return Fraction(*this + v);
+        this->a = (this->a * v.b) + (this->b * v.a);
+        this->b = this->b + v.b;
+
+        return *this;
     }
 
-    const Fraction& operator-(const Fraction& b)
+    Fraction operator-(const Fraction& b)
     {
         return Fraction((this->a * b.b) - (this->b * b.a), this->b + b.b);
     }
 
-    const Fraction& operator*(const Fraction& b)
+    Fraction operator*(const Fraction& b)
     {
         return Fraction(this->a * b.a, this->b * b.b);
     }
 
-    const Fraction& operator/(const Fraction& b)
+    Fraction operator/(const Fraction& b)
     {
         return Fraction(this->a * b.b, this->b * b.a);
     }
@@ -78,9 +81,9 @@ public:
         return ((*this - b).a < 0);
     }
 
-    bool operator==(const Fraction& a) const
+    bool operator==(const Fraction& v) const
     {
-        Fraction b(this->a, this->b);
+        Fraction a = v, b(this->a, this->b);
 
         a = a.simplify();
         b = b.simplify();
