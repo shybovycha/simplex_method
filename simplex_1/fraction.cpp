@@ -51,7 +51,15 @@ public:
     Fraction operator+=(const Fraction& v)
     {
         this->a = (this->a * v.b) + (this->b * v.a);
-        this->b = this->b + v.b;
+        this->b = this->b * v.b;
+
+        return *this;
+    }
+
+    Fraction operator-=(const Fraction& v)
+    {
+        this->a = (this->a * v.b) - (this->b * v.a);
+        this->b = this->b * v.b;
 
         return *this;
     }

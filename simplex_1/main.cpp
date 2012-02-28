@@ -231,7 +231,7 @@ SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, F
             res.marks[i] += res.data.at(basisIndex).at(i) * targetFunctionCoefficients.at(basisIndex);
 
             // і одразу ж знаходимо координати кутової точки
-            res.freePartials.at(basisIndex) = limitations.at(t).at(limitations.at(t).size() - 1);
+            res.freePartials[basisIndex] = limitations.at(t).at(limitations.at(t).size() - 1);
         }
 
         res.marks[i] -= targetFunctionCoefficients.at(i);
