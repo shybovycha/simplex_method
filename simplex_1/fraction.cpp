@@ -148,7 +148,7 @@ public:
         return (x.a != y.a && x.b != y.b);
     }
 
-    QString toString()
+    QString toString() const
     {
         return QString("%1/%2").arg(this->a).arg(this->b);
     }

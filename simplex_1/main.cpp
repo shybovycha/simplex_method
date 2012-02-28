@@ -4,6 +4,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <QDebug>
+
 #include <QList>
 
 #include "fraction.cpp"
@@ -242,7 +244,7 @@ SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, F
 
 int main()
 {
-    /*FractionVector targetFunctionCoefficients;
+    FractionVector targetFunctionCoefficients;
 
     printGreeting();
 
@@ -254,24 +256,14 @@ int main()
 
     limitations = readLimitations();
 
-    printCompiledLimitations(limitations);*/
+    printCompiledLimitations(limitations);
 
-    Fraction a(1, 3), b(3, 6);
+    SimplexTable table = buildFirstSimplexTable(targetFunctionCoefficients, limitations);
 
-    printf("a = %s\t\tb = %s\n", a.toString().toStdString().c_str(), b.toString().toStdString().c_str());
-
-    printf("a + b = %s\n", (a + b).toString().toStdString().c_str());
-    printf("a - b = %s\n", (a - b).toString().toStdString().c_str());
-    printf("a * b = %s\n", (a * b).toString().toStdString().c_str());
-    printf("a / b = %s\n", (a / b).toString().toStdString().c_str());
-
-    a += b;
-
-    printf("a += b = %s\n", a.toString().toStdString().c_str());
-
-    a -= b;
-
-    printf("a -= b = %s\n", a.toString().toStdString().c_str());
+    for (int i = 0; i < (int) table.marks.size(); i++)
+    {
+        printf("%s\n", table.marks.at(i).toString().toStdString().c_str());
+    }
 
     return 0;
 }
