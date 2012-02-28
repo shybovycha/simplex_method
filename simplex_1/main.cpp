@@ -242,7 +242,7 @@ SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, F
 
 int main()
 {
-    FractionVector targetFunctionCoefficients;
+    /*FractionVector targetFunctionCoefficients;
 
     printGreeting();
 
@@ -254,7 +254,24 @@ int main()
 
     limitations = readLimitations();
 
-    printCompiledLimitations(limitations);
+    printCompiledLimitations(limitations);*/
+
+    Fraction a(1, 3), b(3, 6);
+
+    printf("a = %s\t\tb = %s\n", a.toString().toStdString().c_str(), b.toString().toStdString().c_str());
+
+    printf("a + b = %s\n", (a + b).toString().toStdString().c_str());
+    printf("a - b = %s\n", (a - b).toString().toStdString().c_str());
+    printf("a * b = %s\n", (a * b).toString().toStdString().c_str());
+    printf("a / b = %s\n", (a / b).toString().toStdString().c_str());
+
+    a += b;
+
+    printf("a += b = %s\n", a.toString().toStdString().c_str());
+
+    a -= b;
+
+    printf("a -= b = %s\n", a.toString().toStdString().c_str());
 
     return 0;
 }
