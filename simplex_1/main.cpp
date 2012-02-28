@@ -4,84 +4,26 @@
 #include <QString>
 #include <QStringList>
 
-#include <vector>
+#include <QList>
 
-using std::vector;
+#include "fraction.cpp"
 
-class Fraction
+typedef QList<Fraction> FractionVector;
+typedef QList<FractionVector> FractionMatrix;
+
+struct SimplexTable
 {
-private:
-    int a, b;
+    QList<FractionVector> data;
+    FractionVector marks;
 
-public:
-    Fraction(int _a, int _b = 1)
-    {
-        this->a = _a;
-        this->b = _b;
-    }
+    FractionVector freePartials;
 
-    static int gcd(int a, int b)
-    {
-        return (!b) ? a : gcd(b, a % b);
-    }
+    FractionVector cornerCoordinates;
+    Fraction targetFunctionValue;
 
-    Fraction simplify()
-    {
-        int x = 2;
-
-        while (x > 1)
-        {
-            x = Fraction::gcd(this->a, this->b);
-            this->a /= x;
-            this->b /= x;
-        }
-
-        return *this;
-    }
-
-    Fraction(const Fraction &v)
-    {
-        this->a = v.a;
-        this->b = v.b;
-    }
-
-    Fraction operator+(Fraction v)
-    {
-        return Fraction((this->a * v.b) + (this->b * v.a), this->b + v.b);
-    }
-
-    Fraction operator-(Fraction v)
-    {
-        return Fraction((this->a * v.b) - (this->b * v.a), this->b + v.b);
-    }
-
-    Fraction operator*(Fraction v)
-    {
-        return Fraction(this->a * v.a, this->b * v.b);
-    }
-
-    Fraction operator/(Fraction v)
-    {
-        return Fraction(this->a * v.b, this->b * v.a);
-    }
-
-    bool operator>(Fraction v)
-    {
-        return ((*this - v).a > 0);
-    }
-
-    bool operator<(Fraction v)
-    {
-        return ((*this - v).a < 0);
-    }
-
-    QString toString()
-    {
-        return QString("%1/%2").arg(this->a).arg(this->b);
-    }
+    QList<int> basis;
+    int variableCount;
 };
-
-typedef vector<Fraction> FractionVector;
 
 void printGreeting()
 {
@@ -93,11 +35,11 @@ void printGreeting()
 
 FractionVector readTargetFunctionFromStdin()
 {
-    vector<Fraction> res;
+    FractionVector res;
 
     printf("Ітак, вводимо коефіцієнти функції цілі (розділяйте числа комами, пробілами і взагалі чим завгодно - це повинні бути просто цілі числа):");
     char* s = new char[255];
-    gets(s);
+    s = gets(s);
 
     QString str(s);
     QStringList list = str.split(QRegExp("[^\\d-+]+"));
@@ -120,27 +62,27 @@ FractionVector readTargetFunctionFromStdin()
     return res;
 }
 
-void printCompiledTargetFunction(vector<Fraction> targetFunctionCoefficients)
+void printCompiledTargetFunction(FractionVector targetFunctionCoefficients)
 {
     printf("Отаку функцію цілі ми побудували:\nf(x) = ");
 
-    for (int i = 0; i < targetFunctionCoefficients.size(); i++)
+    for (int i = 0; i < (int) targetFunctionCoefficients.size(); i++)
     {
         printf("(%s * X%d)", targetFunctionCoefficients[i].toString().toStdString().c_str(), i + 1);
 
-        if (i < targetFunctionCoefficients.size() - 1)
+        if (i < (int) targetFunctionCoefficients.size() - 1)
             printf(" + ");
     }
 
     printf(" -> min \n");
 }
 
-vector<Fraction> readLimitationMatrixRow()
+FractionVector readLimitationMatrixRow()
 {
-    vector<Fraction> res;
+    FractionVector res;
 
     char* s = new char[255];
-    gets(s);
+    s = gets(s);
 
     QString str(s);
 
@@ -167,13 +109,13 @@ vector<Fraction> readLimitationMatrixRow()
     return res;
 }
 
-vector<FractionVector> readLimitations()
+FractionMatrix readLimitations()
 {
-    vector<FractionVector> res;
+    FractionMatrix res;
 
-    printf("А тепер потрібно ввести систему обмежень. Просто вводьте рядки з чисел. Останній елемент рядка будемо вважати вільним членом. Рядок без жодних чисел вказує на кінець введення.");
+    printf("А тепер потрібно ввести систему обмежень. Просто вводьте рядки з чисел. Останній елемент рядка будемо вважати вільним членом. Рядок без жодних чисел або з лише одним числом (число буде ігноровано) вказує на кінець введення.\n");
 
-    vector<Fraction> row;
+    FractionVector row;
 
     do
     {
@@ -186,19 +128,19 @@ vector<FractionVector> readLimitations()
     return res;
 }
 
-void printCompiledLimitations(vector<FractionVector> limitations)
+void printCompiledLimitations(FractionMatrix limitations)
 {
     printf("Отаку систему обмежень ми отримали:\n");
 
-    for (int i = 0; i < limitations.size(); i++)
+    for (int i = 0; i < (int) limitations.size(); i++)
     {
-        vector<Fraction> limitationRow = limitations[i];
+        FractionVector limitationRow = limitations[i];
 
-        for  (int t = 0; t < limitationRow.size() - 1; t++)
+        for  (int t = 0; t < (int) limitationRow.size() - 1; t++)
         {
-            printf("(%s X%d)", limitationRow[t].toString().toStdString().c_str(), i + 1);
+            printf("(%s X%d)", limitationRow[t].toString().toStdString().c_str(), t + 1);
 
-            if (t < limitationRow.size() - 2)
+            if (t < (int) limitationRow.size() - 2)
                 printf(" + ");
         }
 
@@ -206,9 +148,101 @@ void printCompiledLimitations(vector<FractionVector> limitations)
     }
 }
 
+QList<int> findBasis(FractionMatrix limitations)
+{
+    QList<int> res;
+
+    for (int i = 0; i < (int) limitations.size(); i++)
+    {
+        for (int t = 0; t < (int) limitations.at(i).size() - 1; t++)
+        {
+            Fraction k = limitations.at(i).at(t).simplify();
+
+            if (k.a == 1 && k.b == 1)
+            {
+                bool fl = false;
+
+                for (int j = 0; j < (int) limitations.size(); j++)
+                {
+                    if (i == j)
+                        continue;
+
+                    if (limitations.at(j).at(t) == limitations.at(i).at(t))
+                    {
+                        fl = true;
+                        break;
+                    }
+                }
+
+                if (!fl)
+                {
+                    res.push_back(t);
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, FractionMatrix limitations)
+{
+    SimplexTable res;
+
+    res.basis = findBasis(limitations);
+
+    res.variableCount = limitations.at(0).size();
+
+    // копіюємо внутрішню частину таблиці з системи обмежень
+    for (int i = 0; i < (int) limitations.size(); i++)
+    {
+        FractionVector row;
+
+        // одночасно ж шукаємо кількість змінних в задачі
+        if (limitations.at(i).size() > res.variableCount)
+            res.variableCount = limitations.at(i).size();
+
+        for (int t = 0; t < (int) limitations.at(i).size() - 1; t++)
+        {
+            row.push_back(limitations.at(i).at(t));
+        }
+
+        res.data.push_back(row);
+    }
+
+    // знуляємо всі координати кутової точки
+    for (int i = 0; i < res.variableCount; i++)
+    {
+        res.cornerCoordinates.push_back(Fraction(0));
+    }
+
+    // шукаємо початкові оцінки
+    for (int i = 0; i < res.variableCount; i++)
+    {
+        if (res.basis.contains(i))
+            continue;
+
+        res.marks[i] = 0;
+
+        for (int t = 0; t < (int) res.basis.size(); t++)
+        {
+            int basisIndex = res.basis.at(t);
+
+            res.marks[i] += res.data.at(basisIndex).at(i) * targetFunctionCoefficients.at(basisIndex);
+
+            // і одразу ж знаходимо координати кутової точки
+            res.freePartials.at(basisIndex) = limitations.at(t).at(limitations.at(t).size() - 1);
+        }
+
+        res.marks[i] -= targetFunctionCoefficients.at(i);
+    }
+
+    return res;
+}
+
 int main()
 {
-    vector<Fraction> targetFunctionCoefficients;
+    FractionVector targetFunctionCoefficients;
 
     printGreeting();
 
@@ -216,7 +250,7 @@ int main()
 
     printCompiledTargetFunction(targetFunctionCoefficients);
 
-    vector<FractionVector> limitations;
+    FractionMatrix limitations;
 
     limitations = readLimitations();
 
