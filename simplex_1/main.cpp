@@ -222,20 +222,6 @@ SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, F
     // шукаємо початкові оцінки
     for (int i = 0; i < res.variableCount; i++)
     {
-        /*bool fl = false;
-
-        for (int t = 0; t < res.basis.size(); t++)
-        {
-            if (res.basis.at(t) == i)
-            {
-                fl = true;
-                break;
-            }
-        }
-
-        if (fl)
-            continue;*/
-
         if (res.basis.contains(i))
             continue;
 
@@ -247,6 +233,7 @@ SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, F
         {
             int basisIndex = res.basis.at(t);
 
+            // here is 'out of range' error
             res.marks[i] += res.data.at(basisIndex).at(i) * targetFunctionCoefficients.at(basisIndex);
 
             // і одразу ж знаходимо координати кутової точки

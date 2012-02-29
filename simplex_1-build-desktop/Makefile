@@ -190,6 +190,9 @@ compiler_clean:
 main.o: ../simplex_1/main.cpp ../simplex_1/fraction.cpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../simplex_1/main.cpp
 
+main.o debug: ../simplex_1/main.cpp ../simplex_1/fraction.cpp
+	$(CXX) -g -c $(CXXFLAGS) $(INCPATH) -o main.o ../simplex_1/main.cpp
+
 ####### Install
 
 install:   FORCE
