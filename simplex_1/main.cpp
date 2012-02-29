@@ -218,13 +218,30 @@ SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, F
         res.cornerCoordinates.push_back(Fraction(0));
     }
 
+
     // шукаємо початкові оцінки
     for (int i = 0; i < res.variableCount; i++)
     {
+        /*bool fl = false;
+
+        for (int t = 0; t < res.basis.size(); t++)
+        {
+            if (res.basis.at(t) == i)
+            {
+                fl = true;
+                break;
+            }
+        }
+
+        if (fl)
+            continue;*/
+
         if (res.basis.contains(i))
             continue;
 
-        res.marks[i] = 0;
+        if (res.marks.size() < i)
+            res.marks.push_back(0); else
+                res.marks[i] = 0;
 
         for (int t = 0; t < (int) res.basis.size(); t++)
         {
