@@ -1,3 +1,8 @@
+#ifndef __FRACTION_CPP__
+#define __FRACTION_CPP__
+
+#include <QString>
+
 class Fraction
 {
 public:
@@ -153,3 +158,5 @@ public:
         return QString("%1/%2").arg(this->a).arg(this->b);
     }
 };
+
+#endif
