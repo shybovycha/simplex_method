@@ -9,6 +9,7 @@
 #include <QList>
 
 #include "fraction.cpp"
+#include "simplexsolver.cpp"
 
 typedef QList<Fraction> FractionVector;
 typedef QList<FractionVector> FractionMatrix;
@@ -248,7 +249,7 @@ SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, F
 
 int main()
 {
-    FractionVector targetFunctionCoefficients;
+    /*FractionVector targetFunctionCoefficients;
 
     printGreeting();
 
@@ -267,7 +268,86 @@ int main()
     for (int i = 0; i < (int) table.marks.size(); i++)
     {
         printf("%s\n", table.marks.at(i).toString().toStdString().c_str());
+    }*/
+
+    QList<FractionMap> limitationCoefficients;
+    QMap<int, Fraction> equationCoefficients;
+
+    equationCoefficients[1] = -1;
+    equationCoefficients[2] = -4;
+    equationCoefficients[4] = 1;
+
+
+    {
+        QMap<int, Fraction> a;
+
+        a[1] = Fraction(1);
+        a[2] = Fraction(-1);
+        a[3] = Fraction(1);
+        a[-1] = Fraction(3);
+
+        limitationCoefficients.push_back(a);
     }
+
+    {
+        QMap<int, Fraction> a;
+
+        a[1] = Fraction(2);
+        a[2] = Fraction(1);
+        a[4] = Fraction(1);
+        a[-1] = Fraction(2);
+
+        limitationCoefficients.push_back(a);
+    }
+
+    {
+        QMap<int, Fraction> a;
+
+        a[1] = Fraction(-1);
+        a[2] = Fraction(1);
+        a[5] = Fraction(1);
+        a[-1] = Fraction(1);
+
+        limitationCoefficients.push_back(a);
+    }
+
+    SimplexSolver solver(limitationCoefficients, equationCoefficients);
+
+    QPoint s = solver.getMatrixSize();
+
+    printf("Перша симплекс-таблиця:\n");
+
+    for (int i = 0; i < s.x(); i++)
+    {
+        for (int t = 0; t < s.y(); t++)
+        {
+            printf("%s\t", solver.getMatrixAt(i, t).toString().toStdString().c_str());
+        }
+
+        printf("\n");
+    }
+
+    QMap<int, int> basis = solver.getBasisIndices();
+
+    printf("Базисні змінні:\n");
+
+    for (int i = 0; i < (int) basis.keys().size(); i++)
+    {
+        printf("X%d\n", basis[basis.keys().at(i)]);
+    }
+
+    QMap<int, Fraction> marks = solver.calculateMarks();
+
+    printf("Початкові оцінки:\n");
+
+    for (int i = 0; i < (int) marks.keys().size(); i++)
+    {
+        printf("delta[%d]: %s\n", marks.keys().at(i), marks[marks.keys().at(i)].toString().toStdString().c_str());
+    }
+
+    Fraction f = solver.getFunctionValue();
+
+    printf("Значення ф-ї цілі: %s\n", f.toString().toStdString().c_str());
 
     return 0;
 }
