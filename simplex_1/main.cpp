@@ -313,21 +313,7 @@ int main()
 
     SimplexSolver solver(limitationCoefficients, equationCoefficients);
 
-    QPoint s = solver.getMatrixSize();
-
-    printf("Перша симплекс-таблиця:\n");
-
-    for (int i = 0; i < s.x(); i++)
-    {
-        for (int t = 0; t < s.y(); t++)
-        {
-            printf("%s\t", solver.getMatrixAt(i, t).toString().toStdString().c_str());
-        }
-
-        printf("\n");
-    }
-
-    QMap<int, int> basis = solver.getBasisIndices();
+    /*QMap<int, int> basis = solver.getBasisIndices();
 
     printf("Базисні змінні:\n");
 
@@ -347,7 +333,48 @@ int main()
 
     Fraction f = solver.getFunctionValue();
 
-    printf("Значення ф-ї цілі: %s\n", f.toString().toStdString().c_str());
+    printf("Значення ф-ї цілі: %s\n", f.toString().toStdString().c_str());*/
+
+    QPoint s = solver.getMatrixSize();
+
+    solver.fillLastMatrixRow();
+
+    printf("Перша симплекс-таблиця:\n");
+
+    printf("\\\t");
+
+    for (int i = 0; i < s.y() - 1; i++)
+    {
+        printf("X%d\t", i + 1);
+    }
+
+    printf("В.ч.\n");
+
+    QMap<int, int> basis = solver.getBasisIndices();
+
+    for (int i = 0; i < s.x(); i++)
+    {
+        if (i < s.x() - 1)
+        {
+            printf("X%d\t", basis[i]);
+        } else
+        {
+            printf("f(x)\t");
+        }
+
+        for (int t = 0; t < s.y(); t++)
+        {
+            if (i != s.x() - 1 || t != s.y() - 1)
+            {
+                printf("%s\t", solver.getMatrixAt(i, t).toString().toStdString().c_str());
+            } else
+            {
+                printf("%s*", solver.getMatrixAt(i, t).toString().toStdString().c_str());
+            }
+        }
+
+        printf("\n");
+    }
 
     return 0;
 }

@@ -181,6 +181,32 @@ public:
         return result;
     }
 
+    Fraction getFunctionValue()
+    {
+        Fraction result(0);
+
+        for (int i = 0; i < this->rowCount - 1; i++)
+        {
+            result += this->equationCoefficients[this->basisIndices[i]] *
+                    this->M[i][this->columnCount - 1];
+        }
+
+        return result;
+    }
+
+    void fillLastMatrixRow()
+    {
+        Fraction f = this->getFunctionValue();
+        QMap<int, Fraction> row = this->calculateMarks();
+
+        for (int i = 0; i < (int) row.keys().size(); i++)
+        {
+            this->M[this->rowCount - 1][row.keys().at(i)] = row[row.keys().at(i)];
+        }
+
+        this->M[this->rowCount - 1][this->columnCount - 1] = f;
+    }
+
     QPoint getMatrixSize()
     {
         return QPoint(this->rowCount, this->columnCount);
@@ -196,19 +222,6 @@ public:
     QMap<int, int> getBasisIndices()
     {
         return this->basisIndices;
-    }
-
-    Fraction getFunctionValue()
-    {
-        Fraction result(0);
-
-        for (int i = 0; i < this->rowCount - 1; i++)
-        {
-            result += this->equationCoefficients[this->basisIndices[i]] *
-                    this->M[i][this->columnCount - 1];
-        }
-
-        return result;
     }
 };
 
