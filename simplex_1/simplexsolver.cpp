@@ -128,11 +128,13 @@ public:
             this->M[i][this->columnCount - 1] = _limitationCoefficients.at(i)[-1];
         }
 
+        // копіюємо коефіцієнти функції цілі
         for (int i = 0; i < (int) _equationCoefficients.keys().size(); i++)
         {
             this->equationCoefficients[_equationCoefficients.keys().at(i)] = _equationCoefficients[_equationCoefficients.keys().at(i)];
         }
 
+        // додаємо коефіцієнти функції цілі для штучних змінних
         for (int i = 0; i < this->columnCount - 1; i++)
         {
             if (!this->equationCoefficients.contains(i + 1))
@@ -205,6 +207,96 @@ public:
         }
 
         this->M[this->rowCount - 1][this->columnCount - 1] = f;
+    }
+
+    int findSolvingColumn()
+    {
+        int max = 0, fl = 0;
+
+        for (int i = 1; i < this->columnCount; i++)
+        {
+            if (this->M[this->rowCount - 1][i] > Fraction(0) && this->M[this->rowCount - 1][i] > this->M[this->rowCount - 1][max])
+            {
+                max = i;
+                fl = 1;
+            }
+        }
+
+        qDebug() << QString("maximum column's mark is %1 while no others found.").arg(this->M[this->rowCount - 1][max].toString());
+
+        if (fl || this->M[this->rowCount - 1][max] > Fraction(0))
+        {
+            return max;
+        } else
+        {
+            return -1;
+        }
+    }
+
+    int findSolvingRow(int column)
+    {
+        if (column < 0)
+            return -1;
+
+        QMap<int, Fraction> deltas;
+
+        for (int i = 0; i < this->rowCount - 1; i++)
+        {
+            if (this->M[i][this->columnCount - 1] > Fraction(0) &&
+                this->M[i][column] > Fraction(0))
+            {
+                deltas[i] = this->M[i][this->columnCount - 1] / this->M[i][column];
+            }
+        }
+
+        Fraction min = deltas[deltas.keys().at(0)];
+        int index = deltas.keys().at(0);
+
+        for (int i = 1; i < (int) deltas.keys().size(); i++)
+        {
+            if (deltas[deltas.keys().at(i)] < min)
+            {
+                index = deltas.keys().at(i);
+            }
+        }
+
+        return index;
+    }
+
+    void recalculateSimplexTable()
+    {
+        int a = this->findSolvingColumn(), b = this->findSolvingRow(a);
+
+        if (a < 0 || b < 0)
+        {
+            printf("Could not find valid solvind element (column == %d, row == %d). Terminating.\n", a, b);
+            return;
+        }
+
+        Fraction k1 = this->M[b][a];
+
+        this->basisIndices[b] = a + 1;
+
+        for (int i = 0; i < this->columnCount; i++)
+        {
+            this->M[b][i] /= k1;
+            this->M[this->rowCount - 1][i] = Fraction(0);
+        }
+
+        for (int i = 0; i < this->rowCount - 1; i++)
+        {
+            if (i != b)
+            {
+                Fraction k2 = this->M[i][a];
+
+                for (int t = 0; t < this->columnCount; t++)
+                {
+                    this->M[i][t] -= this->M[b][t] * k2;
+                }
+            }
+        }
+
+        this->fillLastMatrixRow();
     }
 
     QPoint getMatrixSize()

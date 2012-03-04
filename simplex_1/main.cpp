@@ -247,29 +247,48 @@ SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, F
     return res;
 }
 
+void printSimplexTable(SimplexSolver solver)
+{
+    QPoint s = solver.getMatrixSize();
+
+    printf("\\\t");
+
+    for (int i = 0; i < s.y() - 1; i++)
+    {
+        printf("X%d\t", i + 1);
+    }
+
+    printf("В.ч.\n");
+
+    QMap<int, int> basis = solver.getBasisIndices();
+
+    for (int i = 0; i < s.x(); i++)
+    {
+        if (i < s.x() - 1)
+        {
+            printf("X%d\t", basis[i]);
+        } else
+        {
+            printf("f(x)\t");
+        }
+
+        for (int t = 0; t < s.y(); t++)
+        {
+            if (i != s.x() - 1 || t != s.y() - 1)
+            {
+                printf("%s\t", solver.getMatrixAt(i, t).toString().toStdString().c_str());
+            } else
+            {
+                printf("%s*", solver.getMatrixAt(i, t).toString().toStdString().c_str());
+            }
+        }
+
+        printf("\n");
+    }
+}
+
 int main()
 {
-    /*FractionVector targetFunctionCoefficients;
-
-    printGreeting();
-
-    targetFunctionCoefficients = readTargetFunctionFromStdin();
-
-    printCompiledTargetFunction(targetFunctionCoefficients);
-
-    FractionMatrix limitations;
-
-    limitations = readLimitations();
-
-    printCompiledLimitations(limitations);
-
-    SimplexTable table = buildFirstSimplexTable(targetFunctionCoefficients, limitations);
-
-    for (int i = 0; i < (int) table.marks.size(); i++)
-    {
-        printf("%s\n", table.marks.at(i).toString().toStdString().c_str());
-    }*/
-
     QList<FractionMap> limitationCoefficients;
     QMap<int, Fraction> equationCoefficients;
 
@@ -313,68 +332,25 @@ int main()
 
     SimplexSolver solver(limitationCoefficients, equationCoefficients);
 
-    /*QMap<int, int> basis = solver.getBasisIndices();
-
-    printf("Базисні змінні:\n");
-
-    for (int i = 0; i < (int) basis.keys().size(); i++)
-    {
-        printf("X%d\n", basis[basis.keys().at(i)]);
-    }
-
-    QMap<int, Fraction> marks = solver.calculateMarks();
-
-    printf("Початкові оцінки:\n");
-
-    for (int i = 0; i < (int) marks.keys().size(); i++)
-    {
-        printf("delta[%d]: %s\n", marks.keys().at(i), marks[marks.keys().at(i)].toString().toStdString().c_str());
-    }
-
-    Fraction f = solver.getFunctionValue();
-
-    printf("Значення ф-ї цілі: %s\n", f.toString().toStdString().c_str());*/
-
-    QPoint s = solver.getMatrixSize();
-
     solver.fillLastMatrixRow();
 
     printf("Перша симплекс-таблиця:\n");
 
-    printf("\\\t");
+    printSimplexTable(solver);
 
-    for (int i = 0; i < s.y() - 1; i++)
-    {
-        printf("X%d\t", i + 1);
-    }
+    solver.recalculateSimplexTable();
 
-    printf("В.ч.\n");
+    printf("Друга симплекс-таблиця:\n");
 
-    QMap<int, int> basis = solver.getBasisIndices();
+    printSimplexTable(solver);
 
-    for (int i = 0; i < s.x(); i++)
-    {
-        if (i < s.x() - 1)
-        {
-            printf("X%d\t", basis[i]);
-        } else
-        {
-            printf("f(x)\t");
-        }
+    solver.recalculateSimplexTable();
 
-        for (int t = 0; t < s.y(); t++)
-        {
-            if (i != s.x() - 1 || t != s.y() - 1)
-            {
-                printf("%s\t", solver.getMatrixAt(i, t).toString().toStdString().c_str());
-            } else
-            {
-                printf("%s*", solver.getMatrixAt(i, t).toString().toStdString().c_str());
-            }
-        }
+    printf("Третя симплекс-таблиця:\n");
 
-        printf("\n");
-    }
+    printSimplexTable(solver);
+
+    solver.recalculateSimplexTable();
 
     return 0;
 }

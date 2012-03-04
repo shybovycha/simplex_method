@@ -37,33 +37,28 @@ public:
             y /= k;
         }
 
+        if (y < 0)
+        {
+            x *= -1;
+            y *= -1;
+        }
+
         return Fraction(x, y);
     }
 
     Fraction(const Fraction &v)
     {
-        this->a = v.a;
-        this->b = v.b;
-
-        if (this->b < 0)
-        {
-            this->a *= -1;
-            this->b *= -1;
-        }
+        Fraction tmp = v.simplify();
+        this->a = tmp.a;
+        this->b = tmp.b;
     }
 
     Fraction& operator=(const Fraction& v)
     {
-        int k = gcd(v.a, v.b);
+        Fraction tmp = v.simplify();
 
-        this->a = v.a / k;
-        this->b = v.b / k;
-
-        if (this->b < 0)
-        {
-            this->a *= -1;
-            this->b *= -1;
-        }
+        this->a = tmp.a;
+        this->b = tmp.b;
 
         return *this;
     }
@@ -75,38 +70,36 @@ public:
 
     Fraction operator+=(const Fraction& v)
     {
-        this->a = (this->a * v.b) + (this->b * v.a);
-        this->b = this->b * v.b;
+        Fraction tmp((this->a * v.b) + (this->b * v.a), this->b * v.b);
 
-        int k = gcd(this->a, this->b);
+        tmp = tmp.simplify();
 
-        this->a /= k;
-        this->b /= k;
-
-        if (this->b < 0)
-        {
-            this->a *= -1;
-            this->b *= -1;
-        }
+        this->a = tmp.a;
+        this->b = tmp.b;
 
         return *this;
     }
 
     Fraction operator-=(const Fraction& v)
     {
-        this->a = (this->a * v.b) - (this->b * v.a);
-        this->b = this->b * v.b;
+        Fraction tmp((this->a * v.b) - (this->b * v.a), this->b * v.b);
 
-        int k = gcd(this->a, this->b);
+        tmp = tmp.simplify();
 
-        this->a /= k;
-        this->b /= k;
+        this->a = tmp.a;
+        this->b = tmp.b;
 
-        if (this->b < 0)
-        {
-            this->a *= -1;
-            this->b *= -1;
-        }
+        return *this;
+    }
+
+    Fraction operator/=(const Fraction& v)
+    {
+        Fraction tmp(this->a * v.b, this->b * v.a);
+
+        tmp = tmp.simplify();
+
+        this->a = tmp.a;
+        this->b = tmp.b;
 
         return *this;
     }
