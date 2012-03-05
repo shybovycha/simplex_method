@@ -287,15 +287,61 @@ void printSimplexTable(SimplexSolver solver)
     }
 }
 
+#define TEST_CASE_1
+
 int main()
 {
     QList<FractionMap> limitationCoefficients;
     QMap<int, Fraction> equationCoefficients;
 
+#ifdef TEST_CASE_1
+    equationCoefficients[0] = 4;
+    equationCoefficients[1] = 6;
+    equationCoefficients[2] = 0;
+    equationCoefficients[3] = 0;
+    equationCoefficients[4] = 0;
+    equationCoefficients[5] = C_SIMPLEX_M;
+
+    {
+        QMap<int, Fraction> a;
+
+        a[1] = Fraction(-2);
+        a[2] = Fraction(5);
+        a[3] = Fraction(1);
+        a[5] = Fraction(-1);
+        a[-1] = Fraction(3);
+
+        limitationCoefficients.push_back(a);
+    }
+
+    {
+        QMap<int, Fraction> a;
+
+        a[2] = Fraction(4);
+        a[4] = Fraction(1);
+        a[5] = Fraction(-1);
+        a[-1] = Fraction(4);
+
+        limitationCoefficients.push_back(a);
+    }
+
+    {
+        QMap<int, Fraction> a;
+
+        a[1] = Fraction(1);
+        a[2] = Fraction(6);
+        a[5] = Fraction(-1);
+        a[6] = Fraction(1);
+        a[-1] = Fraction(12);
+
+        limitationCoefficients.push_back(a);
+    }
+#else
     equationCoefficients[1] = -1;
     equationCoefficients[2] = -4;
+    equationCoefficients[3] = 0;
     equationCoefficients[4] = 1;
-
+    equationCoefficients[5] = 0;
 
     {
         QMap<int, Fraction> a;
@@ -329,6 +375,7 @@ int main()
 
         limitationCoefficients.push_back(a);
     }
+#endif
 
     SimplexSolver solver(limitationCoefficients, equationCoefficients);
 

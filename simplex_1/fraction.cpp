@@ -148,7 +148,9 @@ public:
 
     QString toString() const
     {
-        return QString("%1/%2").arg(this->a).arg(this->b);
+        if (this->b == 1)
+            return QString("%1").arg(this->a); else
+                return QString("%1/%2").arg(this->a).arg(this->b);
     }
 };
 

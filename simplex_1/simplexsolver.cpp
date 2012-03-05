@@ -9,6 +9,8 @@
 
 #include "fraction.cpp"
 
+#define C_SIMPLEX_M 100
+
 typedef QList<Fraction> FractionVector;
 typedef QMap<int, Fraction> FractionMap;
 
@@ -133,13 +135,6 @@ public:
         {
             this->equationCoefficients[_equationCoefficients.keys().at(i)] = _equationCoefficients[_equationCoefficients.keys().at(i)];
         }
-
-        // додаємо коефіцієнти функції цілі для штучних змінних
-        for (int i = 0; i < this->columnCount - 1; i++)
-        {
-            if (!this->equationCoefficients.contains(i + 1))
-                this->equationCoefficients[i + 1] = Fraction(0);
-        }
     }
 
     QMap<int, Fraction> calculateMarks()
@@ -163,14 +158,16 @@ public:
                 for (int t = 0; t < this->rowCount - 1; t++)
                 {
                     int basisIndex = this->basisIndices[t];
-                    Fraction k = this->M[t][i] * this->equationCoefficients[basisIndex];
+                    Fraction k = this->M[t][i] * this->equationCoefficients[basisIndex - 1];
 
-                    qDebug() << QString("M[%1][%2] * c[%3] == %4 * %5 == %6").arg(t).arg(i).arg(basisIndex).arg(this->M[t][i].toString()).arg(this->equationCoefficients[basisIndex].toString()).arg(k.toString());
+                    qDebug() << QString("M[%1][%2] * c[%3] == %4 * %5 == %6").arg(t).arg(i).arg(basisIndex).arg(this->M[t][i].toString()).arg(this->equationCoefficients[basisIndex - 1].toString()).arg(k.toString());
 
                     mark += k;
                 }
 
-                mark -= this->equationCoefficients[i + 1];
+                qDebug() << QString("c[%1] == %2").arg(i + 1).arg(this->equationCoefficients[i].toString());
+
+                mark -= this->equationCoefficients[i];
             } else
             // для решти вона рівна нулю
             {
@@ -189,8 +186,7 @@ public:
 
         for (int i = 0; i < this->rowCount - 1; i++)
         {
-            result += this->equationCoefficients[this->basisIndices[i]] *
-                    this->M[i][this->columnCount - 1];
+            result += this->M[i][this->columnCount - 1] * this->equationCoefficients[this->basisIndices[i] - 1];
         }
 
         return result;
@@ -213,7 +209,7 @@ public:
     {
         int max = 0, fl = 0;
 
-        for (int i = 1; i < this->columnCount; i++)
+        for (int i = 1; i < this->columnCount - 1; i++)
         {
             if (this->M[this->rowCount - 1][i] > Fraction(0) && this->M[this->rowCount - 1][i] > this->M[this->rowCount - 1][max])
             {
