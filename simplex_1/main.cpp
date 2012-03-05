@@ -381,23 +381,27 @@ int main()
 
     solver.fillLastMatrixRow();
 
-    printf("Перша симплекс-таблиця:\n");
+    for (int i = 0; i < 10; i++)
+    {
+        printf("Симплекс-таблиця №%d:\n", i + 1);
 
-    printSimplexTable(solver);
+        printSimplexTable(solver);
 
-    solver.recalculateSimplexTable();
+        solver.recalculateSimplexTable();
 
-    printf("Друга симплекс-таблиця:\n");
+        int fl = solver.isFurtherOptimizationsPossible();
 
-    printSimplexTable(solver);
+        if (fl)
+        {
+            qDebug() << QString("Optimizations are impossible: status %1").arg(fl);
 
-    solver.recalculateSimplexTable();
+            printf("Остання симплекс-таблиця:\n");
 
-    printf("Третя симплекс-таблиця:\n");
+            printSimplexTable(solver);
 
-    printSimplexTable(solver);
-
-    solver.recalculateSimplexTable();
+            break;
+        }
+    }
 
     return 0;
 }

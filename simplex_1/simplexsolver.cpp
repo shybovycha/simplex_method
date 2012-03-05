@@ -295,6 +295,46 @@ public:
         this->fillLastMatrixRow();
     }
 
+    int isFurtherOptimizationsPossible()
+    {
+        // чи можливі подальші оптимізації?
+        // 0 - можливі
+        // 1 - не можливі бо поточне значення функції оптимальне
+        // 2 - не можливі, бо функція цілі не обмежена на МПР знизу
+
+        bool fl1 = true;
+
+        for (int i = 0; i < this->columnCount - 1; i++)
+        {
+            // якщо хоча б над однією з додатніх оцінок нема жодного додатнього ел-та
+            // ф-я цілі не обмежена знизу на МПР
+            if (this->M[this->rowCount - 1][i] > Fraction(0))
+            {
+                fl1 = false;
+
+                bool fl2 = true;
+
+                for (int t = 0; t < this->rowCount - 1; t++)
+                {
+                    if (this->M[t][i] > Fraction(0))
+                    {
+                        fl2 = false;
+
+                        break;
+                    }
+                }
+
+                if (fl2)
+                    return 2;
+            }
+        }
+
+        if (fl1)
+            return 1;
+
+        return 0;
+    }
+
     QPoint getMatrixSize()
     {
         return QPoint(this->rowCount, this->columnCount);
