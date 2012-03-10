@@ -10,6 +10,7 @@
 
 #include "fraction.cpp"
 #include "simplexsolver.cpp"
+#include "simplexconverter.cpp"
 
 typedef QList<Fraction> FractionVector;
 typedef QList<FractionVector> FractionMatrix;
@@ -377,7 +378,16 @@ int main()
     }
 #endif
 
-    SimplexSolver solver(limitationCoefficients, equationCoefficients);
+    QString equation("-1x3 +3x1 - 7x2 -> min");
+    QList<QString> limitations;
+
+    limitations << QString("3x1 -2x2 + x3<= 3");
+    limitations << QString("x1 +2x2 - 2 x3 <= 1");
+    limitations << QString("x1 + 4x3 >=4");
+
+    SimplexConverter converter(equation, limitations);
+
+    /*SimplexSolver solver(equationCoefficients, limitationCoefficients);
 
     solver.fillLastMatrixRow();
 
@@ -401,7 +411,7 @@ int main()
 
             break;
         }
-    }
+    }*/
 
     return 0;
 }

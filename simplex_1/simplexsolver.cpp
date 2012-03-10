@@ -28,7 +28,7 @@ private:
     QMap<int, Fraction> equationCoefficients;
 
 public:
-    SimplexSolver(QList<FractionMap> _limitationCoefficients, QMap<int, Fraction> _equationCoefficients)
+    SimplexSolver(QMap<int, Fraction> _equationCoefficients, QList<FractionMap> _limitationCoefficients)
     {
         if (_limitationCoefficients.size() < 1)
         {
