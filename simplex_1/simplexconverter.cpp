@@ -22,6 +22,12 @@ private:
     QList<int> orig_positive_variables;
     QString orig_mode;
 
+    FractionMap coefficients;
+    QList<FractionMap> matrix;
+    QList<QString> signs;
+    QList<int> positive_variables;
+    QString mode;
+
 public:
     SimplexConverter(QString equation, QList<QString> limitations = QList<QString>(), QList<QString> positive_variables = QList<QString>())
     {
@@ -98,7 +104,7 @@ public:
             qDebug("function is maximizing"); else
                 qDebug() << QString("function has unknown state '%1'").arg(this->orig_mode);
 
-        QRegExp limitation_re("([^<>=]{1,})\\s*(.?=)\\s*(\\d+)", Qt::CaseInsensitive);
+        QRegExp limitation_re("([^<>=]{1,})\\s*(.?=)\\s*(-?\\s*\\d+)", Qt::CaseInsensitive);
 
         /*
          * RegExp capture groups:
@@ -144,21 +150,129 @@ public:
             this->orig_matrix.push_back(limitation_row);
             this->orig_signs.push_back(limitation_re.cap(2));
         }
+    }
+
+    void debugOriginalData()
+    {
+        QString function_line("f(x) = ");
+
+        for (int i = 0; i < this->orig_coefficients.keys().size(); i++)
+        {
+            function_line += QString(" + %2 * X%1").arg(this->orig_coefficients.keys().at(i)).arg(this->orig_coefficients[this->orig_coefficients.keys().at(i)].toString());
+        }
+
+        function_line += QString(" -> %1").arg(this->orig_mode);
+
+        qDebug(function_line.toStdString().c_str());
+
+        qDebug("{");
 
         for (int i = 0; i < this->orig_matrix.size(); i++)
         {
             FractionMap limitation = this->orig_matrix.at(i);
 
-            qDebug("{");
+            QString line;
 
             for (int t = 1; t < limitation.keys().size(); t++)
             {
-                qDebug() << QString("%2 * X%1").arg(limitation.keys().at(t)).arg(limitation[limitation.keys().at(t)].toString());
+                line += QString(" + %2 * X%1").arg(limitation.keys().at(t)).arg(limitation[limitation.keys().at(t)].toString());
             }
 
-            qDebug() << QString("[%1] %2").arg(this->orig_signs.at(i)).arg(this->orig_matrix.at(i)[-1].toString());
+            line += QString(" %1 %2 ").arg(this->orig_signs.at(i)).arg(this->orig_matrix.at(i)[-1].toString());
 
-            qDebug("}");
+            qDebug(line.toStdString().c_str());
+        }
+
+        qDebug("}");
+    }
+
+    void debugConvertedData()
+    {
+        QString function_line("f(x) = ");
+
+        for (int i = 0; i < this->coefficients.keys().size(); i++)
+        {
+            function_line += QString(" + %2 * X%1").arg(this->coefficients.keys().at(i)).arg(this->coefficients[this->coefficients.keys().at(i)].toString());
+        }
+
+        function_line += QString(" -> %1").arg(this->mode);
+
+        qDebug(function_line.toStdString().c_str());
+
+        qDebug("{");
+
+        for (int i = 0; i < this->matrix.size(); i++)
+        {
+            FractionMap limitation = this->matrix.at(i);
+
+            QString line;
+
+            for (int t = 1; t < limitation.keys().size(); t++)
+            {
+                line += QString(" + %2 * X%1").arg(limitation.keys().at(t)).arg(limitation[limitation.keys().at(t)].toString());
+            }
+
+            line += QString(" %1 %2 ").arg(this->signs.at(i)).arg(this->matrix.at(i)[-1].toString());
+
+            qDebug(line.toStdString().c_str());
+        }
+
+        qDebug("}");
+    }
+
+    void convert()
+    {
+        // мінімізуємо функцію
+        Fraction partialCoefficient(1);
+
+        if (this->orig_mode == "max")
+        {
+            partialCoefficient = Fraction(-1);
+        }
+
+        for (int i = 0; i < this->orig_coefficients.keys().size(); i++)
+        {
+            int key = this->orig_coefficients.keys().at(i);
+
+            this->coefficients[key] = this->orig_coefficients[key] * partialCoefficient;
+        }
+
+        this->mode = "min";
+
+        // робимо усі вільні члени додатніми
+        for (int i = 0; i < this->orig_matrix.size(); i++)
+        {
+            this->matrix.push_back(this->orig_matrix.at(i));
+            this->signs.push_back(this->orig_signs.at(i));
+
+            if (this->orig_matrix.at(i)[-1] < Fraction(0))
+            {
+                for (int t = 0; t < this->orig_matrix.at(i).keys().size(); t++)
+                {
+                    this->matrix[i][this->orig_matrix.at(i).keys().at(t)] *= Fraction(-1);
+                }
+
+                if (this->orig_signs.at(i) == "<=")
+                    this->signs[i] = ">="; else
+                if (this->orig_signs.at(i) == ">=")
+                    this->signs[i] = "<=";
+            }
+        }
+
+        // заповнюємо коефіцієнти функції цілі, котрих нема нулями
+        for (int i = 0; i < this->matrix.size(); i++)
+        {
+            FractionMap limitation = this->matrix.at(i);
+
+            for (int t = 0; t < limitation.keys().size(); t++)
+            {
+                int key = limitation.keys().at(t);
+
+                if (key != -1 && !this->coefficients.keys().contains(key))
+                {
+                    this->coefficients[key] = 0;
+                }
+            }
         }
     }
 };

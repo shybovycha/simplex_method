@@ -92,6 +92,18 @@ public:
         return *this;
     }
 
+    Fraction operator*=(const Fraction& v)
+    {
+        Fraction tmp(this->a * v.a, this->b * v.b);
+
+        tmp = tmp.simplify();
+
+        this->a = tmp.a;
+        this->b = tmp.b;
+
+        return *this;
+    }
+
     Fraction operator/=(const Fraction& v)
     {
         Fraction tmp(this->a * v.b, this->b * v.a);
@@ -124,9 +136,19 @@ public:
         return ((*this - b).a > 0);
     }
 
+    bool operator>=(const Fraction& b) const
+    {
+        return ((*this - b).a >= 0);
+    }
+
     bool operator<(const Fraction& b) const
     {
         return ((*this - b).a < 0);
+    }
+
+    bool operator<=(const Fraction& b) const
+    {
+        return ((*this - b).a <= 0);
     }
 
     bool operator==(const Fraction& v) const
