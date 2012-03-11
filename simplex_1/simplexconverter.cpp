@@ -150,6 +150,8 @@ public:
 
     void debugOriginalData()
     {
+        printf("<ORIGINAL>\n");
+
         QString function_line("f(x) = ");
 
         for (int i = 0; i < this->orig_coefficients.keys().size(); i++)
@@ -159,9 +161,9 @@ public:
 
         function_line += QString(" -> %1").arg(this->orig_mode);
 
-        qDebug(function_line.toStdString().c_str());
+        printf("%s\n", function_line.toStdString().c_str());
 
-        qDebug("{");
+        printf("{\n");
 
         for (int i = 0; i < this->orig_matrix.size(); i++)
         {
@@ -176,10 +178,10 @@ public:
 
             line += QString(" %1 %2 ").arg(this->orig_signs.at(i)).arg(this->orig_matrix.at(i)[-1].toString());
 
-            qDebug(line.toStdString().c_str());
+            printf("%s\n", line.toStdString().c_str());
         }
 
-        qDebug("}");
+        printf("}\n");
 
         QString positive_line;
 
@@ -188,11 +190,13 @@ public:
             positive_line += QString(" X%1 >= 0 ").arg(this->orig_positive_variables.at(i));
         }
 
-        qDebug(positive_line.toStdString().c_str());
+        printf("%s\n\n", positive_line.toStdString().c_str());
     }
 
     void debugConvertedData()
     {
+        printf("<CALCULATED>\n");
+
         QString function_line("f(x) = ");
 
         for (int i = 0; i < this->coefficients.keys().size(); i++)
@@ -202,9 +206,9 @@ public:
 
         function_line += QString(" -> %1").arg(this->mode);
 
-        qDebug(function_line.toStdString().c_str());
+        printf("%s\n", function_line.toStdString().c_str());
 
-        qDebug("{");
+        printf("{\n");
 
         for (int i = 0; i < this->matrix.size(); i++)
         {
@@ -219,19 +223,27 @@ public:
 
             line += QString(" %1 %2 ").arg(this->signs.at(i)).arg(this->matrix.at(i)[-1].toString());
 
-            qDebug(line.toStdString().c_str());
+            printf("%s\n", line.toStdString().c_str());
         }
 
-        qDebug("}");
+        printf("}\n");
 
-        QString positive_line;
-
-        for (int i = 0; i < this->positive_variables.size(); i++)
+        if (this->positive_variables.size() <= 0)
         {
-            positive_line += QString(" X%1 >= 0 ").arg(this->positive_variables.at(i));
+            printf("<no positive conditions were copied/calculated yet>\n");
+        } else
+        {
+            QString positive_line;
+
+            for (int i = 0; i < this->positive_variables.size(); i++)
+            {
+                positive_line += QString(" X%1 >= 0 ").arg(this->positive_variables.at(i));
+            }
+
+            printf("%s\n", positive_line.toStdString().c_str());
         }
 
-        qDebug(positive_line.toStdString().c_str());
+        printf("\n");
     }
 
     int insertVariable(Fraction equationCoefficient, Fraction matrixCoefficient = Fraction(0), int limitationIndex = -1)
@@ -401,6 +413,16 @@ public:
                 this->insertVariable(C_SIMPLEX_M, Fraction(1), i);
             }
         }
+    }
+
+    QMap<int, Fraction> getEquationCoefficients()
+    {
+        return this->coefficients;
+    }
+
+    QList<FractionMap> getLimitationCoefficients()
+    {
+        return this->matrix;
     }
 };
 

@@ -62,8 +62,6 @@ public:
                         // якщо коефіцієнт їмінної не "+1" - вона НЕ базисна
                         if (currentVariable.a != currentVariable.b)
                         {
-                            qDebug() << QString("X%1 (%2) does not have +1 coefficient").arg(currentVariableIndex).arg(currentVariable.toString().toStdString().c_str());
-
                             fl = false;
                             break;
                         }
@@ -75,8 +73,6 @@ public:
                         // якщо змінна міститься хоча б в одному рівнянні, крім даного - вона також НЕ базисна
                         if (_limitationCoefficients.at(j).keys().contains(currentVariableIndex))
                         {
-                            qDebug() << QString("eq[%1] && eq[%2] contains X%3").arg(i + 1).arg(j + 1).arg(currentVariableIndex);
-
                             fl = false;
                             break;
                         }
@@ -84,8 +80,6 @@ public:
 
                     if (fl)
                     {
-                       qDebug() << QString("X%1 is meant to be a basis-one, right?").arg(currentVariableIndex);
-
                         this->basisIndices[i] = currentVariableIndex;
                     }
                 }
@@ -131,11 +125,6 @@ public:
     {
         QMap<int, Fraction> result;
 
-        for (int i = 0; i < (int) this->equationCoefficients.keys().size(); i++)
-        {
-            qDebug() << QString("c[%1] = %2").arg(this->equationCoefficients.keys().at(i)).arg(this->equationCoefficients[this->equationCoefficients.keys().at(i)].toString());
-        }
-
         for (int i = 0; i < this->columnCount - 1; i++)
         {
             Fraction mark(0);
@@ -143,25 +132,15 @@ public:
             // для всіх змінних, які не базисні рахуємо оцінку
             if (!this->basisIndices.values().contains(i + 1))
             {
-                qDebug() << QString("X%1 is NOT within a basis").arg(i + 1);
-
                 for (int t = 0; t < this->rowCount - 1; t++)
                 {
                     int basisIndex = this->basisIndices[t];
-                    Fraction k = this->M[t][i] * this->equationCoefficients[basisIndex - 1];
-
-                    qDebug() << QString("M[%1][%2] * c[%3] == %4 * %5 == %6").arg(t).arg(i).arg(basisIndex).arg(this->M[t][i].toString()).arg(this->equationCoefficients[basisIndex - 1].toString()).arg(k.toString());
+                    Fraction k = this->M[t][i] * this->equationCoefficients[basisIndex];
 
                     mark += k;
                 }
 
-                qDebug() << QString("c[%1] == %2").arg(i + 1).arg(this->equationCoefficients[i].toString());
-
-                mark -= this->equationCoefficients[i];
-            } else
-            // для решти вона рівна нулю
-            {
-                qDebug() << QString("X%1 IS within a basis").arg(i + 1);
+                mark -= this->equationCoefficients[i + 1];
             }
 
             result[i] = mark;
@@ -176,7 +155,7 @@ public:
 
         for (int i = 0; i < this->rowCount - 1; i++)
         {
-            result += this->M[i][this->columnCount - 1] * this->equationCoefficients[this->basisIndices[i] - 1];
+            result += this->M[i][this->columnCount - 1] * this->equationCoefficients[this->basisIndices[i]];
         }
 
         return result;
@@ -208,8 +187,6 @@ public:
             }
         }
 
-        qDebug() << QString("maximum column's mark is %1 while no others found.").arg(this->M[this->rowCount - 1][max].toString());
-
         if (fl || this->M[this->rowCount - 1][max] > Fraction(0))
         {
             return max;
@@ -224,23 +201,27 @@ public:
         if (column < 0)
             return -1;
 
-        QMap<int, Fraction> deltas;
+        FractionMap deltas;
 
         for (int i = 0; i < this->rowCount - 1; i++)
         {
-            if (this->M[i][this->columnCount - 1] > Fraction(0) &&
+            if (this->M[i][this->columnCount - 1] >= Fraction(0) &&
                 this->M[i][column] > Fraction(0))
             {
                 deltas[i] = this->M[i][this->columnCount - 1] / this->M[i][column];
             }
         }
 
-        Fraction min = deltas[deltas.keys().at(0)];
+        if (deltas.size() <= 0)
+        {
+            return -1;
+        }
+
         int index = deltas.keys().at(0);
 
         for (int i = 1; i < (int) deltas.keys().size(); i++)
         {
-            if (deltas[deltas.keys().at(i)] < min)
+            if (deltas[deltas.keys().at(i)] < deltas[index])
             {
                 index = deltas.keys().at(i);
             }
@@ -321,6 +302,11 @@ public:
 
         if (fl1)
             return 1;
+
+        int a = this->findSolvingColumn(), b = this->findSolvingRow(a);
+
+        if (a < 0 || b < 0)
+            return 3;
 
         return 0;
     }

@@ -12,242 +12,6 @@
 #include "simplexsolver.cpp"
 #include "simplexconverter.cpp"
 
-typedef QList<Fraction> FractionVector;
-typedef QList<FractionVector> FractionMatrix;
-
-struct SimplexTable
-{
-    QList<FractionVector> data;
-    FractionVector marks;
-
-    FractionVector freePartials;
-
-    FractionVector cornerCoordinates;
-    Fraction targetFunctionValue;
-
-    QList<int> basis;
-    int variableCount;
-};
-
-void printGreeting()
-{
-    printf("Ця програма кагбе рішає кагбе симплекс-метходом кагбе задачу оптимізації.\n\n");
-    printf("Обмеження - система лінійних рівнянь.\n");
-    printf("Функція цілі - лінійна.\n");
-    printf("На всі змінні накладаєцця умова невід’ємності.\n\n");
-}
-
-FractionVector readTargetFunctionFromStdin()
-{
-    FractionVector res;
-
-    printf("Ітак, вводимо коефіцієнти функції цілі (розділяйте числа комами, пробілами і взагалі чим завгодно - це повинні бути просто цілі числа):");
-    char* s = new char[255];
-    s = gets(s);
-
-    QString str(s);
-    QStringList list = str.split(QRegExp("[^\\d-+]+"));
-
-    bool ok = false;
-
-    for (int i = 0; i < list.size(); i++)
-    {
-        Fraction f(list[i].toInt(&ok, 10));
-
-        if (!ok)
-        {
-            printf("Отакої! Сталась помилка, тому я не зможу перетворити рядок `%s` в ціле число чи дріб...\n", list[i].toStdString().c_str());
-            continue;
-        }
-
-        res.push_back(f);
-    }
-
-    return res;
-}
-
-void printCompiledTargetFunction(FractionVector targetFunctionCoefficients)
-{
-    printf("Отаку функцію цілі ми побудували:\nf(x) = ");
-
-    for (int i = 0; i < (int) targetFunctionCoefficients.size(); i++)
-    {
-        printf("(%s * X%d)", targetFunctionCoefficients[i].toString().toStdString().c_str(), i + 1);
-
-        if (i < (int) targetFunctionCoefficients.size() - 1)
-            printf(" + ");
-    }
-
-    printf(" -> min \n");
-}
-
-FractionVector readLimitationMatrixRow()
-{
-    FractionVector res;
-
-    char* s = new char[255];
-    s = gets(s);
-
-    QString str(s);
-
-    if (str.length() <= 0)
-        return res;
-
-    QStringList list = str.split(QRegExp("[^\\d-+]+"));
-
-    bool ok = false;
-
-    for (int i = 0; i < list.size(); i++)
-    {
-        Fraction f(list[i].toInt(&ok, 10));
-
-        if (!ok)
-        {
-            printf("Отакої! Сталась помилка, тому я не зможу перетворити рядок `%s` в ціле число чи дріб...\n", list[i].toStdString().c_str());
-            continue;
-        }
-
-        res.push_back(f);
-    }
-
-    return res;
-}
-
-FractionMatrix readLimitations()
-{
-    FractionMatrix res;
-
-    printf("А тепер потрібно ввести систему обмежень. Просто вводьте рядки з чисел. Останній елемент рядка будемо вважати вільним членом. Рядок без жодних чисел або з лише одним числом (число буде ігноровано) вказує на кінець введення.\n");
-
-    FractionVector row;
-
-    do
-    {
-        row = readLimitationMatrixRow();
-
-        if (row.size() > 1)
-            res.push_back(row);
-    } while (row.size() > 1);
-
-    return res;
-}
-
-void printCompiledLimitations(FractionMatrix limitations)
-{
-    printf("Отаку систему обмежень ми отримали:\n");
-
-    for (int i = 0; i < (int) limitations.size(); i++)
-    {
-        FractionVector limitationRow = limitations[i];
-
-        for  (int t = 0; t < (int) limitationRow.size() - 1; t++)
-        {
-            printf("(%s X%d)", limitationRow[t].toString().toStdString().c_str(), t + 1);
-
-            if (t < (int) limitationRow.size() - 2)
-                printf(" + ");
-        }
-
-        printf(" = %s\n", limitationRow[limitationRow.size() - 1].toString().toStdString().c_str());
-    }
-}
-
-QList<int> findBasis(FractionMatrix limitations)
-{
-    QList<int> res;
-
-    for (int i = 0; i < (int) limitations.size(); i++)
-    {
-        for (int t = 0; t < (int) limitations.at(i).size() - 1; t++)
-        {
-            Fraction k = limitations.at(i).at(t).simplify();
-
-            if (k.a == 1 && k.b == 1)
-            {
-                bool fl = false;
-
-                for (int j = 0; j < (int) limitations.size(); j++)
-                {
-                    if (i == j)
-                        continue;
-
-                    if (limitations.at(j).at(t) == limitations.at(i).at(t))
-                    {
-                        fl = true;
-                        break;
-                    }
-                }
-
-                if (!fl)
-                {
-                    res.push_back(t);
-                }
-            }
-        }
-    }
-
-    return res;
-}
-
-SimplexTable buildFirstSimplexTable(FractionVector targetFunctionCoefficients, FractionMatrix limitations)
-{
-    SimplexTable res;
-
-    res.basis = findBasis(limitations);
-
-    res.variableCount = limitations.at(0).size();
-
-    // копіюємо внутрішню частину таблиці з системи обмежень
-    for (int i = 0; i < (int) limitations.size(); i++)
-    {
-        FractionVector row;
-
-        // одночасно ж шукаємо кількість змінних в задачі
-        if (limitations.at(i).size() > res.variableCount)
-            res.variableCount = limitations.at(i).size();
-
-        for (int t = 0; t < (int) limitations.at(i).size() - 1; t++)
-        {
-            row.push_back(limitations.at(i).at(t));
-        }
-
-        res.data.push_back(row);
-    }
-
-    // знуляємо всі координати кутової точки
-    for (int i = 0; i < res.variableCount; i++)
-    {
-        res.cornerCoordinates.push_back(Fraction(0));
-    }
-
-
-    // шукаємо початкові оцінки
-    for (int i = 0; i < res.variableCount; i++)
-    {
-        if (res.basis.contains(i))
-            continue;
-
-        if (res.marks.size() < i)
-            res.marks.push_back(0); else
-                res.marks[i] = 0;
-
-        for (int t = 0; t < (int) res.basis.size(); t++)
-        {
-            int basisIndex = res.basis.at(t);
-
-            // here is 'out of range' error
-            res.marks[i] += res.data.at(basisIndex).at(i) * targetFunctionCoefficients.at(basisIndex);
-
-            // і одразу ж знаходимо координати кутової точки
-            res.freePartials[basisIndex] = limitations.at(t).at(limitations.at(t).size() - 1);
-        }
-
-        res.marks[i] -= targetFunctionCoefficients.at(i);
-    }
-
-    return res;
-}
-
 void printSimplexTable(SimplexSolver solver)
 {
     QPoint s = solver.getMatrixSize();
@@ -286,116 +50,55 @@ void printSimplexTable(SimplexSolver solver)
 
         printf("\n");
     }
-}
 
-#define TEST_CASE_1
+    printf("\n");
+}
 
 int main()
 {
-    QList<FractionMap> limitationCoefficients;
-    QMap<int, Fraction> equationCoefficients;
+    /*QString equation("-x1 -4x2 + x3 - x4 + 3x5 -> min");
 
-#ifdef TEST_CASE_1
-    equationCoefficients[0] = 4;
-    equationCoefficients[1] = 6;
-    equationCoefficients[2] = 0;
-    equationCoefficients[3] = 0;
-    equationCoefficients[4] = 0;
-    equationCoefficients[5] = C_SIMPLEX_M;
-
-    {
-        QMap<int, Fraction> a;
-
-        a[1] = Fraction(-2);
-        a[2] = Fraction(5);
-        a[3] = Fraction(1);
-        a[5] = Fraction(-1);
-        a[-1] = Fraction(3);
-
-        limitationCoefficients.push_back(a);
-    }
-
-    {
-        QMap<int, Fraction> a;
-
-        a[2] = Fraction(4);
-        a[4] = Fraction(1);
-        a[5] = Fraction(-1);
-        a[-1] = Fraction(4);
-
-        limitationCoefficients.push_back(a);
-    }
-
-    {
-        QMap<int, Fraction> a;
-
-        a[1] = Fraction(1);
-        a[2] = Fraction(6);
-        a[5] = Fraction(-1);
-        a[6] = Fraction(1);
-        a[-1] = Fraction(12);
-
-        limitationCoefficients.push_back(a);
-    }
-#else
-    equationCoefficients[1] = -1;
-    equationCoefficients[2] = -4;
-    equationCoefficients[3] = 0;
-    equationCoefficients[4] = 1;
-    equationCoefficients[5] = 0;
-
-    {
-        QMap<int, Fraction> a;
-
-        a[1] = Fraction(1);
-        a[2] = Fraction(-1);
-        a[3] = Fraction(1);
-        a[-1] = Fraction(3);
-
-        limitationCoefficients.push_back(a);
-    }
-
-    {
-        QMap<int, Fraction> a;
-
-        a[1] = Fraction(2);
-        a[2] = Fraction(1);
-        a[4] = Fraction(1);
-        a[-1] = Fraction(2);
-
-        limitationCoefficients.push_back(a);
-    }
-
-    {
-        QMap<int, Fraction> a;
-
-        a[1] = Fraction(-1);
-        a[2] = Fraction(1);
-        a[5] = Fraction(1);
-        a[-1] = Fraction(1);
-
-        limitationCoefficients.push_back(a);
-    }
-#endif
-
-    QString equation("-x1 + 5x2 - 3x3 -> min");
     QList<QString> limitations;
+
+    limitations << QString("x1 + x2 + 4x3 - x4 + 5x5 <= 9");
+    limitations << QString("x1 + x2 + x3 - x4 + 3x5 <= 3");
+    limitations << QString("4x1 + x2 + x3 + x4 + x5 = 3");
+
     QList<QString> positives;
 
-    limitations << QString("x1 -4x2 + x3>= -4");
-    limitations << QString("6x1 +   x2 - 4 x3 <= 3");
-    limitations << QString("x1+ x2 - 2 x3 >=4");
+    positives << QString("x1");
+    positives << QString("x2");
+    positives << QString("x3");
+    positives << QString("x4");
+    positives << QString("x5");*/
+
+    QString equation("-x1 + x2 - 2x4 -> max");
+
+    QList<QString> limitations;
+
+    limitations << QString("x1 - 2x2 + x3 = 3");
+    limitations << QString("4x1 + 3x2 + x4 = 4");
+    limitations << QString("x1 - 2x2 + x5 = 1");
+    limitations << QString("-4x1 - 3x2 + x6 = 2");
+
+    QList<QString> positives;
 
     positives << QString("x1");
+    positives << QString("x2");
     positives << QString("x3");
+    positives << QString("x4");
+    positives << QString("x5");
+    positives << QString("x6");
 
     SimplexConverter converter(equation, limitations, positives);
 
     converter.debugOriginalData();
     converter.convert();
-    converter.debugConvertedData();
 
-    /*SimplexSolver solver(equationCoefficients, limitationCoefficients);
+    QList<FractionMap> limitationCoefficients = converter.getLimitationCoefficients();
+    QMap<int, Fraction> equationCoefficients = converter.getEquationCoefficients();;
+
+    SimplexSolver solver(equationCoefficients, limitationCoefficients);
 
     solver.fillLastMatrixRow();
 
@@ -419,7 +122,7 @@ int main()
 
             break;
         }
-    }*/
+    }
 
     return 0;
 }
