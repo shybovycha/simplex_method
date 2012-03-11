@@ -378,14 +378,18 @@ int main()
     }
 #endif
 
-    QString equation("-1x3 -> max");
+    QString equation("-x1 + 5x2 - 3x3 -> min");
     QList<QString> limitations;
+    QList<QString> positives;
 
-    limitations << QString("3x1 -2x2 + x3<= 3");
-    limitations << QString("x1 +2x2 - 2 x3 <= -1");
-    limitations << QString("x1 + 4x3 >=-4");
+    limitations << QString("x1 -4x2 + x3>= -4");
+    limitations << QString("6x1 +   x2 - 4 x3 <= 3");
+    limitations << QString("x1+ x2 - 2 x3 >=4");
 
-    SimplexConverter converter(equation, limitations);
+    positives << QString("x1");
+    positives << QString("x3");
+
+    SimplexConverter converter(equation, limitations, positives);
 
     converter.debugOriginalData();
     converter.convert();

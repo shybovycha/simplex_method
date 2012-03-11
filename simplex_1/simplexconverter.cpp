@@ -25,7 +25,7 @@ private:
     QString mode;
 
 public:
-    SimplexConverter(QString equation, QList<QString> limitations = QList<QString>(), QList<QString> positive_variables = QList<QString>())
+    SimplexConverter(QString equation, QList<QString> limitations = QList<QString>(), QList<QString> positive_variable_list = QList<QString>())
     {
         QRegExp equation_re("([^>]{1,})\\s*->\\s*(min|max)", Qt::CaseInsensitive);
         QRegExp equation_partial_re("((\\+|\\-)?\\s*(\\d+)?)\\s*x(\\d+)\\s*", Qt::CaseInsensitive);
@@ -89,17 +89,6 @@ public:
             this->orig_mode = equation_re.cap(2);
         }
 
-        for (int i = 0; i < this->orig_coefficients.keys().size(); i++)
-        {
-            qDebug() << QString("c[%1] => %2").arg(this->orig_coefficients.keys().at(i)).arg(this->orig_coefficients[this->orig_coefficients.keys().at(i)].toString());
-        }
-
-        if (this->orig_mode == "min")
-            qDebug("function is minimizing"); else
-        if (this->orig_mode == "max")
-            qDebug("function is maximizing"); else
-                qDebug() << QString("function has unknown state '%1'").arg(this->orig_mode);
-
         QRegExp limitation_re("([^<>=]{1,})\\s*(.?=)\\s*(-?\\s*\\d+)", Qt::CaseInsensitive);
 
         /*
@@ -146,6 +135,17 @@ public:
             this->orig_matrix.push_back(limitation_row);
             this->orig_signs.push_back(limitation_re.cap(2));
         }
+
+        for (int i = 0; i < positive_variable_list.size(); i++)
+        {
+            QString v = positive_variable_list[i].replace(QRegExp("\\s+"), QString(""));
+            QRegExp positive_re("x(\\d+)", Qt::CaseInsensitive);
+
+            if (positive_re.indexIn(v) > -1)
+            {
+                this->orig_positive_variables.push_back(positive_re.cap(1).toInt());
+            }
+        }
     }
 
     void debugOriginalData()
@@ -180,6 +180,15 @@ public:
         }
 
         qDebug("}");
+
+        QString positive_line;
+
+        for (int i = 0; i < this->orig_positive_variables.size(); i++)
+        {
+            positive_line += QString(" X%1 >= 0 ").arg(this->orig_positive_variables.at(i));
+        }
+
+        qDebug(positive_line.toStdString().c_str());
     }
 
     void debugConvertedData()
@@ -214,11 +223,20 @@ public:
         }
 
         qDebug("}");
+
+        QString positive_line;
+
+        for (int i = 0; i < this->positive_variables.size(); i++)
+        {
+            positive_line += QString(" X%1 >= 0 ").arg(this->positive_variables.at(i));
+        }
+
+        qDebug(positive_line.toStdString().c_str());
     }
 
     int insertVariable(Fraction equationCoefficient, Fraction matrixCoefficient = Fraction(0), int limitationIndex = -1)
     {
-        int index = this->coefficients[this->coefficients.size() - 1] + 1;
+        int index = this->coefficients.keys()[this->coefficients.size() - 1] + 1;
 
         this->coefficients[index] = equationCoefficient;
 
@@ -226,6 +244,8 @@ public:
         {
             this->matrix[limitationIndex][index] = matrixCoefficient;
         }
+
+        this->positive_variables.push_back(index);
 
         return index;
     }
@@ -285,53 +305,101 @@ public:
             }
         }
 
+        this->debugConvertedData();
+
         // обробка нерівностей виду "<="
         for (int i = 0; i < this->matrix.size(); i++)
         {
             if (this->signs.at(i) == "<=")
             {
-                int index = this->coefficients.size() + 1;
+                this->insertVariable(Fraction(0), Fraction(1), i);
 
-                this->coefficients[index] = Fraction(0);
-                this->matrix[i][index] = Fraction(1);
                 this->signs[i] = "=";
             }
         }
 
-        // шукаємо нерівності виду ">=" в системі та рівняння у вихідній системі
-        bool geEquationsPresent = false;
-        bool eqEquationsPresent = false;
+        this->debugConvertedData();
 
+        // шукаємо нерівності виду ">=" в системі та віднімаємо від них
+        // додаткові змінні, таким чином перетворюючи нерівності на рівняння
         for (int i = 0; i < this->matrix.size(); i++)
         {
             if (this->signs.at(i) == ">=")
             {
-                for (int t = 0; t < this->orig_matrix.size(); t++)
+                int index = this->insertVariable(0);
+
+                this->matrix[i][index] = Fraction(-1);
+                this->signs[i] = "=";
+            }
+        }
+
+        this->debugConvertedData();
+
+        // обробка змінних, на які не накладено умову невід'ємності
+        for (int i = 0; i < this->orig_positive_variables.size(); i++)
+        {
+            this->positive_variables.push_back(this->orig_positive_variables.at(i));
+        }
+
+        for (int i = 0; i < this->orig_coefficients.keys().size(); i++)
+        {
+            int index1 = this->orig_coefficients.keys().at(i);
+
+            if (!this->positive_variables.contains(index1))
+            {
+                int index2 = this->insertVariable(this->orig_coefficients[index1] * Fraction(-1));
+
+                for (int t = 0; t < this->matrix.size(); t++)
                 {
-                    if (i == t)
+                    if (this->matrix[t].keys().contains(index1))
+                    {
+                        this->matrix[t][index2] = this->matrix[t][index1] * Fraction(-1);
+                    }
+                }
+
+                this->positive_variables.push_back(index1);
+                this->positive_variables.push_back(index2);
+            }
+        }
+
+        this->debugConvertedData();
+
+        // додаємо базисні змінні там, де їх не вистачає
+        for (int i = 0; i < this->matrix.size(); i++)
+        {
+            FractionMap limitation = this->matrix.at(i);
+            bool fl1 = false;
+
+            for (int t = 0; t < limitation.keys().size(); t++)
+            {
+                int index = limitation.keys().at(t);
+                bool fl2 = false;
+
+                for (int j = 0; j < this->matrix.size(); j++)
+                {
+                    if (j == i)
                     {
                         continue;
                     }
 
-                    if (this->signs.at(t) == "=")
+                    if (this->matrix.at(j).keys().contains(index))
                     {
-                        eqEquationsPresent = true;
+                        fl2 = true;
                         break;
                     }
                 }
 
-                geEquationsPresent = true;
-                break;
+                if (!fl2 && limitation[index] == Fraction(1))
+                {
+                    fl1 = true;
+                    break;
+                }
             }
-        }
 
-        // випадок, коли в системі присутні нерівності виду ">="
-        // і в оригінальній системі відсутні рівняння
-        if (geEquationsPresent && !eqEquationsPresent)
-        {
-        } else
-        {
-
+            if (!fl1)
+            {
+                this->insertVariable(C_SIMPLEX_M, Fraction(1), i);
+            }
         }
     }
 };
