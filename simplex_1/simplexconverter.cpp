@@ -1,17 +1,13 @@
 #ifndef __SIMPLEXCONVERTER_CPP__
 #define __SIMPLEXCONVERTER_CPP__
 
-#include <stdio.h>
 #include <QDebug>
 #include <QList>
 #include <QMap>
 #include <QString>
 #include <QRegExp>
 
-#include "fraction.cpp"
-
-typedef QList<Fraction> FractionList;
-typedef QMap<int, Fraction> FractionMap;
+#include "simplex.h"
 
 class SimplexConverter
 {
@@ -220,6 +216,20 @@ public:
         qDebug("}");
     }
 
+    int insertVariable(Fraction equationCoefficient, Fraction matrixCoefficient = Fraction(0), int limitationIndex = -1)
+    {
+        int index = this->coefficients[this->coefficients.size() - 1] + 1;
+
+        this->coefficients[index] = equationCoefficient;
+
+        if (limitationIndex > -1)
+        {
+            this->matrix[limitationIndex][index] = matrixCoefficient;
+        }
+
+        return index;
+    }
+
     void convert()
     {
         // мінімізуємо функцію
@@ -273,6 +283,55 @@ public:
                     this->coefficients[key] = 0;
                 }
             }
+        }
+
+        // обробка нерівностей виду "<="
+        for (int i = 0; i < this->matrix.size(); i++)
+        {
+            if (this->signs.at(i) == "<=")
+            {
+                int index = this->coefficients.size() + 1;
+
+                this->coefficients[index] = Fraction(0);
+                this->matrix[i][index] = Fraction(1);
+                this->signs[i] = "=";
+            }
+        }
+
+        // шукаємо нерівності виду ">=" в системі та рівняння у вихідній системі
+        bool geEquationsPresent = false;
+        bool eqEquationsPresent = false;
+
+        for (int i = 0; i < this->matrix.size(); i++)
+        {
+            if (this->signs.at(i) == ">=")
+            {
+                for (int t = 0; t < this->orig_matrix.size(); t++)
+                {
+                    if (i == t)
+                    {
+                        continue;
+                    }
+
+                    if (this->signs.at(t) == "=")
+                    {
+                        eqEquationsPresent = true;
+                        break;
+                    }
+                }
+
+                geEquationsPresent = true;
+                break;
+            }
+        }
+
+        // випадок, коли в системі присутні нерівності виду ">="
+        // і в оригінальній системі відсутні рівняння
+        if (geEquationsPresent && !eqEquationsPresent)
+        {
+        } else
+        {
+
         }
     }
 };
