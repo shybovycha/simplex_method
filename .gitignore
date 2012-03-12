@@ -1,5 +1,5 @@
-*.user
-*.o
-*.elf
-*.exe
-*.pro
+*/*.user
+*/*.o
+*/*.elf
+*/*.exe
+*/*.pro
