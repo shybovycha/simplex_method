@@ -161,6 +161,24 @@ public:
         return result;
     }
 
+    FractionMap getCornerCoordinates()
+    {
+        FractionMap result;
+
+        for (int i = 0; i < this->rowCount - 1; i++)
+        {
+            result[this->basisIndices[i]] = this->M[i][this->columnCount - 1];
+        }
+
+        for (int i = 0; i < this->columnCount - 1; i++)
+        {
+            if (!result.keys().contains(i))
+                result[i + 1] = 0;
+        }
+
+        return result;
+    }
+
     void fillLastMatrixRow()
     {
         Fraction f = this->getFunctionValue();

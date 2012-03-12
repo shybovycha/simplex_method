@@ -17,6 +17,8 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     fraction.cpp \
-    simplexsolver.cpp
+    simplexsolver.cpp \
+    simplexconverter.cpp
 
-HEADERS +=
+HEADERS += \
+    simplex.h
